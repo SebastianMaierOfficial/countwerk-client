@@ -22,6 +22,29 @@ Base URL (example):
 - `order_id`: Digistore24 order id (used to resolve to `account_id`).
 - `transaction_id`: Digistore24 transaction id (used when credits are added via DS24).
 
+## SDK (optional, Node.js)
+
+If you prefer a thin SDK instead of raw HTTP calls, you can use the official npm package.
+
+Install:
+
+```
+npm i @sebastianmaierofficial/countwerk-client
+```
+
+Quick example:
+
+```ts
+import { createCountwerkClient } from "@sebastianmaierofficial/countwerk-client";
+
+const countwerk = createCountwerkClient({
+  apiKey: "cs_...your_key..."
+  // baseUrl optional (defaults to https://app.countwerk.com)
+});
+
+await countwerk.resolveOrder("ORDER_123");
+```
+
 ## The 3 Core Consumer Flows (MVP)
 
 A) Claim / Link

@@ -3,6 +3,10 @@
 This document is the single source of truth for external consumer integrations.
 All fields below are **required** unless explicitly marked **optional**.
 
+Optional SDK: A thin Node.js client is available via npm
+(`@sebastianmaierofficial/countwerk-client`) for those who prefer not to write
+raw HTTP code. The HTTP contract below remains the SSoT.
+
 ## Auth
 
 All endpoints require:

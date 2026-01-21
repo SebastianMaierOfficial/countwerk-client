@@ -80,6 +80,44 @@ function runLongJob(accountId, jobPayload) {
 }
 ```
 
+## SDK Example (Node.js, optional)
+
+```ts
+import { createCountwerkClient } from "@sebastianmaierofficial/countwerk-client";
+
+const countwerk = createCountwerkClient({ apiKey: "cs_...your_key..." });
+
+async function runLongJob(accountId, jobPayload) {
+  let reservationId: string | null = null;
+  try {
+    const res = await countwerk.reserve({
+      account_id: accountId,
+      operation: "job.train",
+      amount: 2,
+      validityMinutes: 60
+    });
+    reservationId = res.reservationId;
+
+    const result = await runJob(jobPayload);
+
+    await countwerk.confirmReservation({
+      reservationId,
+      actualAmount: 2
+    });
+
+    return result;
+  } catch (err) {
+    if (reservationId) {
+      await countwerk.cancelReservation({
+        reservationId,
+        reason: "Job failed"
+      });
+    }
+    throw err;
+  }
+}
+```
+
 ## Expected Failure Cases
 
 - `INSUFFICIENT_CREDITS` on reserve: show purchase options.

@@ -86,6 +86,41 @@ function handleChatTurn(userId, message) {
 }
 ```
 
+## SDK Example (Node.js, optional)
+
+```ts
+import { createCountwerkClient } from "@sebastianmaierofficial/countwerk-client";
+
+const countwerk = createCountwerkClient({ apiKey: "cs_...your_key..." });
+
+async function handleChatTurn(userId, message) {
+  const accountId = db.users.get(userId).account_id;
+  const usageEventId = `turn-${message.id}`;
+
+  try {
+    await countwerk.deduct({
+      account_id: accountId,
+      operation: "app.chat.reply",
+      amount: 1,
+      usage_event_id: usageEventId
+    });
+
+    return runModel(message);
+  } catch (err) {
+    if (err.code === "INSUFFICIENT_CREDITS") {
+      const links = await countwerk.purchaseLinks({
+        ai_product_id: "ai_product_001",
+        account_id: accountId,
+        current_tier_product_id: "PRO_001",
+        current_order_id: "ORDER_123"
+      });
+      return renderUpsell(links.options);
+    }
+    throw err;
+  }
+}
+```
+
 ## Expected Failure Cases
 
 - `ORDER_NOT_MAPPED_YET`: retry resolve-order later.
