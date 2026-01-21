@@ -14,7 +14,6 @@ npm i @sebastianmaierofficial/countwerk-client
 import { createCountwerkClient, CountwerkError } from "@sebastianmaierofficial/countwerk-client";
 
 const countwerk = createCountwerkClient({
-  baseUrl: "https://<your-countwerk-host>",
   apiKey: "cs_...your_key..."
 });
 
@@ -60,8 +59,8 @@ run();
 
 ```ts
 createCountwerkClient({
-  baseUrl: string,
   apiKey: string,
+  baseUrl?: string, // defaults to https://app.countwerk.com
   timeoutMs?: number,
   maxRetries?: number
 })

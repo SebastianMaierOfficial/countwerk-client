@@ -18,7 +18,7 @@ import type {
 } from "./types";
 
 export type CountwerkClientConfig = {
-  baseUrl: string;
+  baseUrl?: string;
   apiKey: string;
   timeoutMs?: number;
   maxRetries?: number;
@@ -45,7 +45,7 @@ export const createCountwerkClient = (
   config: CountwerkClientConfig
 ): CountwerkClient => {
   const client: HttpClientOptions = {
-    baseUrl: config.baseUrl,
+    baseUrl: config.baseUrl ?? "https://app.countwerk.com",
     apiKey: config.apiKey,
     timeoutMs: config.timeoutMs,
     maxRetries: config.maxRetries,
