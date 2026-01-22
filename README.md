@@ -2,6 +2,9 @@
 
 Thin Node.js/TypeScript client for Countwerk consumer APIs.
 
+[![npm version](https://img.shields.io/npm/v/@sebastianmaierofficial/countwerk-client.svg)](https://www.npmjs.com/package/@sebastianmaierofficial/countwerk-client)
+[![GitHub stars](https://img.shields.io/github/stars/SebastianMaierOfficial/countwerk-client.svg)](https://github.com/SebastianMaierOfficial/countwerk-client)
+
 ## Install
 
 ```bash
