@@ -48,7 +48,7 @@ await countwerk.resolveOrder("ORDER_123");
 ## The 3 Core Consumer Flows (MVP)
 
 A) Claim / Link
-- `resolve-order(order_id)` ➜ returns `account_id`
+- `resolve-order(order_id)` ➜ returns `account_id`, `ai_product_id`
 
 B) Runtime Usage
 - `balance` (optional pre-check)
@@ -106,10 +106,7 @@ curl -X POST "${BASE_URL}/api/purchase-links" \
   -H "X-API-Key: ${API_KEY}" \
   -d '{
     "ai_product_id":"ai_product_001",
-    "account_id":"acct_123",
-    "current_tier_product_id":"PRO_001",
-    "current_order_id":"ORDER_123",
-    "buyer_email":"buyer@example.com"
+    "account_id":"acct_123"
   }'
 ```
 

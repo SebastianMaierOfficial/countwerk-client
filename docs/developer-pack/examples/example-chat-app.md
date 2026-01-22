@@ -49,9 +49,7 @@ Content-Type: application/json
 
 {
   "ai_product_id": "ai_product_001",
-  "account_id": "acct_123",
-  "current_tier_product_id": "PRO_001",
-  "current_order_id": "ORDER_123"
+  "account_id": "acct_123"
 }
 ```
 
@@ -75,9 +73,7 @@ function handleChatTurn(userId, message) {
     if (err.code === "INSUFFICIENT_CREDITS") {
       const links = countwerk.purchaseLinks({
         ai_product_id: "ai_product_001",
-        account_id: accountId,
-        current_tier_product_id: "PRO_001",
-        current_order_id: "ORDER_123"
+        account_id: accountId
       });
       return renderUpsell(links.options);
     }
@@ -110,9 +106,7 @@ async function handleChatTurn(userId, message) {
     if (err.code === "INSUFFICIENT_CREDITS") {
       const links = await countwerk.purchaseLinks({
         ai_product_id: "ai_product_001",
-        account_id: accountId,
-        current_tier_product_id: "PRO_001",
-        current_order_id: "ORDER_123"
+        account_id: accountId
       });
       return renderUpsell(links.options);
     }

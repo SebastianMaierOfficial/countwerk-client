@@ -5,14 +5,12 @@ export type ResolveOrderRequest = {
 export type ResolveOrderResponse = {
   order_id: string;
   account_id: string;
+  ai_product_id: string;
 };
 
 export type PurchaseLinksRequest = {
   ai_product_id: string;
   account_id: string;
-  current_tier_product_id?: string;
-  current_order_id?: string;
-  buyer_email?: string;
 };
 
 export type PurchaseOption = {
@@ -32,6 +30,8 @@ export type PurchaseOption = {
 export type PurchaseLinksResponse = {
   ai_product_id: string;
   account_id: string;
+  current_order_id: string | null;
+  current_tier_product_id: string | null;
   options: PurchaseOption[];
 };
 

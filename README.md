@@ -32,10 +32,8 @@ async function demo() {
 
   // Purchase links
   const links = await countwerk.purchaseLinks({
-    ai_product_id: "ai_product_001",
-    account_id: resolved.account_id,
-    current_tier_product_id: "PRO_001",
-    current_order_id: "ORDER_123"
+    ai_product_id: resolved.ai_product_id,
+    account_id: resolved.account_id
   });
 
   return links.options;
@@ -68,7 +66,7 @@ createCountwerkClient({
 
 Client methods:
 - `resolveOrder(order_id)`
-- `purchaseLinks({ ai_product_id, account_id, current_order_id?, current_tier_product_id?, buyer_email? })`
+- `purchaseLinks({ ai_product_id, account_id })`
 - `balance(account_id)`
 - `deduct({ account_id, amount, operation, usage_event_id, description?, metadata? })`
 - `reserve({ account_id, amount, operation, validityMinutes?, description? })`

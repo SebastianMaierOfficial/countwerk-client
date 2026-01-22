@@ -21,11 +21,16 @@ describe("countwerk-client", () => {
       .post("/api/credits/resolve-order", { order_id: "ORDER_123" })
       .reply(200, {
         success: true,
-        data: { order_id: "ORDER_123", account_id: "acct_123" },
+        data: {
+          order_id: "ORDER_123",
+          account_id: "acct_123",
+          ai_product_id: "ai_product_001",
+        },
       });
 
     const res = await client.resolveOrder("ORDER_123");
     expect(res.account_id).toBe("acct_123");
+    expect(res.ai_product_id).toBe("ai_product_001");
     scope.done();
   });
 
@@ -40,6 +45,8 @@ describe("countwerk-client", () => {
         data: {
           ai_product_id: "ai_product_001",
           account_id: "acct_123",
+          current_order_id: "ORDER_123",
+          current_tier_product_id: "PRO_001",
           options: [
             {
               type: "topup",
@@ -64,6 +71,8 @@ describe("countwerk-client", () => {
     });
 
     expect(res.options[0]?.type).toBe("topup");
+    expect(res.current_order_id).toBe("ORDER_123");
+    expect(res.current_tier_product_id).toBe("PRO_001");
     scope.done();
   });
 

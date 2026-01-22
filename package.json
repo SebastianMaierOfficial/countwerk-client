@@ -1,6 +1,6 @@
 {
   "name": "@sebastianmaierofficial/countwerk-client",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Thin Node.js client for Countwerk consumer APIs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

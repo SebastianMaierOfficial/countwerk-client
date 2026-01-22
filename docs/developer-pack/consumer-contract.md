@@ -36,7 +36,8 @@ Success response:
   "success": true,
   "data": {
     "order_id": "ORDER_123",
-    "account_id": "acct_123"
+    "account_id": "acct_123",
+    "ai_product_id": "ai_product_001"
   }
 }
 ```
@@ -62,9 +63,6 @@ Generate account-bound Digistore24 purchase options for an AI product.
 Request body:
 - `ai_product_id` (required)
 - `account_id` (required)
-- `current_tier_product_id` (optional; required to return upgrade/downgrade options)
-- `current_order_id` (optional; required to enable upgrade/downgrade links)
-- `buyer_email` (optional; prefill only)
 
 Rules:
 - DS24 API key is mandatory; missing/invalid keys may return a hard failure or a response with `options[]` disabled.
@@ -72,6 +70,8 @@ Rules:
 - Do not construct DS24 upgrade URLs manually.
 
 Response data:
+- `current_order_id` (nullable)
+- `current_tier_product_id` (nullable)
 - `options[]` (required)
   - Required fields per option:
     - `type`: `topup | upgrade | downgrade | manage`
@@ -95,6 +95,8 @@ Success example (mixed options, includes enabled=false):
   "data": {
     "ai_product_id": "ai_product_001",
     "account_id": "acct_123",
+    "current_order_id": "ORDER_123",
+    "current_tier_product_id": "PRO_001",
     "options": [
       {
         "type": "topup",
