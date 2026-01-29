@@ -1,0 +1,27 @@
+{
+  "name": "@sebastianmaierofficial/countwerk-client",
+  "version": "0.2.1",
+  "description": "Thin Node.js client for Countwerk consumer APIs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "jest"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "license": "MIT"
+}

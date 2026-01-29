@@ -1,94 +1,25 @@
-# Countwerk Client (Node.js)
+# Countwerk SDK Monorepo
 
-Thin Node.js/TypeScript client for Countwerk consumer APIs.
+This repo hosts the Countwerk SDK packages.
 
-[![npm version](https://img.shields.io/npm/v/@sebastianmaierofficial/countwerk-client.svg)](https://www.npmjs.com/package/@sebastianmaierofficial/countwerk-client)
-[![GitHub stars](https://img.shields.io/github/stars/SebastianMaierOfficial/countwerk-client.svg)](https://github.com/SebastianMaierOfficial/countwerk-client)
+## Packages
+
+- `@sebastianmaierofficial/countwerk-client`: Ledger-only Countwerk client for consumer APIs.
+- `@sebastianmaierofficial/countwerk-pricing`: Runtime Contract v1 helper (Dimensions -> CU -> Credits).
 
 ## Install
 
 ```bash
 npm i @sebastianmaierofficial/countwerk-client
+npm i @sebastianmaierofficial/countwerk-pricing
 ```
 
-## Quickstart
+## Development
 
-```ts
-import { createCountwerkClient, CountwerkError } from "@sebastianmaierofficial/countwerk-client";
-
-const countwerk = createCountwerkClient({
-  apiKey: "cs_...your_key..."
-});
-
-async function demo() {
-  // Resolve order
-  const resolved = await countwerk.resolveOrder("ORDER_123");
-
-  // Deduct credits (idempotent)
-  await countwerk.deduct({
-    account_id: resolved.account_id,
-    operation: "app.chat.reply",
-    amount: 1,
-    usage_event_id: "turn-2026-01-20-001",
-    description: "Chat reply"
-  });
-
-  // Purchase links
-  const links = await countwerk.purchaseLinks({
-    ai_product_id: resolved.ai_product_id,
-    account_id: resolved.account_id
-  });
-
-  return links.options;
-}
-
-async function run() {
-  try {
-    await demo();
-  } catch (err) {
-    if (err instanceof CountwerkError) {
-      console.error(err.code, err.status, err.details);
-    }
-    throw err;
-  }
-}
-
-run();
+```bash
+npm run build
+npm test
 ```
-
-## API
-
-```ts
-createCountwerkClient({
-  apiKey: string,
-  baseUrl?: string, // defaults to https://app.countwerk.com
-  timeoutMs?: number,
-  maxRetries?: number
-})
-```
-
-Client methods:
-- `resolveOrder(order_id)`
-- `purchaseLinks({ ai_product_id, account_id })`
-- `balance(account_id)`
-- `deduct({ account_id, amount, operation, usage_event_id, description?, metadata? })`
-- `reserve({ account_id, amount, operation, validityMinutes?, description? })`
-- `confirmReservation({ reservationId, actualAmount?, description? })`
-- `cancelReservation({ reservationId, reason? })`
-
-## Error handling
-
-The client throws `CountwerkError` for non-2xx responses or `success: false` payloads.
-
-Fields:
-- `code`: string (e.g. `INSUFFICIENT_CREDITS`, `ORDER_NOT_FOUND`)
-- `status`: number (HTTP status)
-- `message`: string
-- `details?`: response `data` if present
-
-## Security
-
-**Never use your API key in the browser.** Only call Countwerk from a trusted server.
 
 ## Links
 

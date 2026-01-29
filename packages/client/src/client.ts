@@ -45,7 +45,7 @@ export const createCountwerkClient = (
   config: CountwerkClientConfig
 ): CountwerkClient => {
   const client: HttpClientOptions = {
-    baseUrl: config.baseUrl ?? "https://app.countwerk.com",
+    baseUrl: config.baseUrl ?? "https://api.countwerk.com/",
     apiKey: config.apiKey,
     timeoutMs: config.timeoutMs,
     maxRetries: config.maxRetries,

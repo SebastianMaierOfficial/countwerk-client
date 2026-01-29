@@ -39,7 +39,7 @@ import { createCountwerkClient } from "@sebastianmaierofficial/countwerk-client"
 
 const countwerk = createCountwerkClient({
   apiKey: "cs_...your_key..."
-  // baseUrl optional (defaults to https://app.countwerk.com)
+  // baseUrl optional (defaults to https://api.countwerk.com/)
 });
 
 await countwerk.resolveOrder("ORDER_123");

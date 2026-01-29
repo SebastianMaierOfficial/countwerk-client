@@ -1,23 +1,12 @@
 {
-  "name": "@sebastianmaierofficial/countwerk-client",
-  "version": "0.2.0",
-  "description": "Thin Node.js client for Countwerk consumer APIs",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "require": "./dist/index.js",
-      "import": "./dist/index.js"
-    }
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
+  "name": "@sebastianmaierofficial/countwerk-monorepo",
+  "private": true,
+  "description": "Countwerk client and pricing runtime helpers",
+  "workspaces": [
+    "packages/*"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "npm run -ws build",
     "test": "jest"
   },
   "devDependencies": {
@@ -27,9 +16,6 @@
     "nock": "^13.5.4",
     "ts-jest": "^29.1.2",
     "typescript": "^5.4.2"
-  },
-  "engines": {
-    "node": ">=16"
   },
   "license": "MIT"
 }

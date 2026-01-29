@@ -1,0 +1,27 @@
+{
+  "name": "@sebastianmaierofficial/countwerk-pricing",
+  "version": "0.1.0",
+  "description": "Countwerk Pricing Runtime Contract v1 helper",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "jest"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "license": "MIT"
+}
