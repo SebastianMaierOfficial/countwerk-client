@@ -26,6 +26,10 @@ export interface PricingInput {
     attributes?: Attributes;
     mode?: "STRICT" | "RUNTIME";
 }
+export interface PricingOptions {
+    includeRounded?: boolean;
+    roundingMode?: "ceil";
+}
 export interface BreakdownRow {
     dimensionKey: string;
     qty: number;
@@ -37,7 +41,7 @@ export interface BreakdownRow {
 }
 export interface PriceResult {
     totalCredits: number;
-    totalCreditsToDeduct: number;
+    totalCreditsToDeduct?: number;
     breakdown: BreakdownRow[];
     ruleIdsUsed: string[];
     rulesetHash: string;
@@ -51,7 +55,7 @@ export interface PricingEngine {
     profileVersion: ProfileVersion;
     rulesetHash: string;
     engineVersion: string;
-    price: (input: PricingInput) => PriceResult;
+    price: (input: PricingInput, options?: PricingOptions) => PriceResult;
     buildAuditPayload: (input: PricingInput, result: PriceResult) => Record<string, unknown>;
 }
 export declare class PricingError extends Error {
@@ -68,5 +72,5 @@ export declare class PricingError extends Error {
     });
 }
 export declare function loadProfileVersion(json: string | ProfileVersion): PricingEngine;
-export declare function price(profileVersion: ProfileVersion, input: PricingInput, precomputedRulesetHash?: string): PriceResult;
+export declare function price(profileVersion: ProfileVersion, input: PricingInput, precomputedRulesetHash?: string, options?: PricingOptions): PriceResult;
 export declare function buildAuditPayload(profileVersion: ProfileVersion, input: PricingInput, result: PriceResult, precomputedRulesetHash?: string): Record<string, unknown>;

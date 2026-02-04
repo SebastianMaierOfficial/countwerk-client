@@ -165,11 +165,11 @@ function loadProfileVersion(json) {
         profileVersion,
         rulesetHash: activeRulesetHash,
         engineVersion: exports.ENGINE_VERSION,
-        price: (input) => price(profileVersion, input, activeRulesetHash),
+        price: (input, options) => price(profileVersion, input, activeRulesetHash, options),
         buildAuditPayload: (input, result) => buildAuditPayload(profileVersion, input, result, activeRulesetHash),
     };
 }
-function price(profileVersion, input, precomputedRulesetHash) {
+function price(profileVersion, input, precomputedRulesetHash, options) {
     const attributes = input.attributes;
     const mode = input.mode ?? "STRICT";
     const breakdown = [];
@@ -224,12 +224,18 @@ function price(profileVersion, input, precomputedRulesetHash) {
     if (unmatchedDimensions.length > 0 && mode === "RUNTIME") {
         quarantineReason = quarantineReason ?? "UNMATCHED_DIMENSION";
     }
-    const totalCreditsToDeduct = totalCredits > 0 ? Math.ceil(totalCredits) : 0;
+    const includeRounded = options?.includeRounded ?? false;
+    const roundingMode = options?.roundingMode ?? "ceil";
+    const totalCreditsToDeduct = includeRounded && totalCredits > 0
+        ? roundingMode === "ceil"
+            ? Math.ceil(totalCredits)
+            : Math.ceil(totalCredits)
+        : undefined;
     const profileEngineVersion = profileVersion.engineVersion ?? "unknown";
     const runtimeEngineVersion = exports.ENGINE_VERSION;
     return {
         totalCredits,
-        totalCreditsToDeduct,
+        ...(totalCreditsToDeduct !== undefined ? { totalCreditsToDeduct } : {}),
         breakdown,
         ruleIdsUsed,
         rulesetHash: precomputedRulesetHash ?? profileVersion.rulesetHash ?? computedRulesetHash,
@@ -254,7 +260,9 @@ function buildAuditPayload(profileVersion, input, result, precomputedRulesetHash
         attributes: input.attributes ?? {},
         eurPerCredit: profileVersion.eurPerCredit,
         totalCredits: result.totalCredits,
-        totalCreditsToDeduct: result.totalCreditsToDeduct,
+        ...(result.totalCreditsToDeduct !== undefined
+            ? { totalCreditsToDeduct: result.totalCreditsToDeduct }
+            : {}),
         costTotalEur,
         ...(result.unmatchedDimensions ? { unmatchedDimensions: result.unmatchedDimensions } : {}),
         ...(result.quarantineReason ? { quarantineReason: result.quarantineReason } : {}),

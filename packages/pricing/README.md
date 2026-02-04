@@ -28,7 +28,11 @@ const result = engine.price(input);
 
 const auditPayload = engine.buildAuditPayload(input, result);
 
-console.log(result.totalCredits, result.totalCreditsToDeduct);
+console.log(result.totalCredits);
+
+// Optional: rounded credits for display-only convenience
+const rounded = engine.price(input, { includeRounded: true, roundingMode: "ceil" });
+console.log(rounded.totalCreditsToDeduct);
 ```
 
 ## API
@@ -47,6 +51,7 @@ console.log(result.totalCredits, result.totalCreditsToDeduct);
 - `rulesetHash` is validated against the computed hash when provided in the profile JSON.
  - `mode: "STRICT"` throws `PricingError` with `code = "RULESET_HASH_MISMATCH"`.
  - `mode: "RUNTIME"` returns `quarantineReason = "RULESET_HASH_MISMATCH"`.
+- Countwerk deducts fractional credits. `totalCredits` is the raw fractional value.
 
 ## Canonical v1 Schema (short)
 
@@ -60,7 +65,7 @@ Input:
 - `dimensions`, `attributes`, `mode?`
 
 Output:
-- `totalCredits`, `totalCreditsToDeduct`, `ruleIdsUsed`, `rulesetHash`, `profileVersionId`,
+- `totalCredits`, `ruleIdsUsed`, `rulesetHash`, `profileVersionId`,
   `profileEngineVersion`, `runtimeEngineVersion`, `unmatchedDimensions?`, `quarantineReason?`, `breakdown?`
  - `breakdown` entries: `{ dimensionKey, qty, creditsPerUnit, credits, costPerUnitEur?, costEur?, ruleId }`
 
@@ -88,7 +93,7 @@ const result = engine.price({
   dimensions: { active_user_day: 1 }
 });
 
-console.log(result.totalCredits, result.totalCreditsToDeduct); // 3, 3
+console.log(result.totalCredits); // 3
 ```
 
 ### Petra: token pricing (credits per token)
@@ -126,5 +131,5 @@ const result = engine.price({
   attributes: { model: "gpt-4o-mini" }
 });
 
-console.log(result.totalCredits, result.totalCreditsToDeduct);
+console.log(result.totalCredits);
 ```

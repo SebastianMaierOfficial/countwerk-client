@@ -33,6 +33,11 @@ export interface PricingInput {
   mode?: "STRICT" | "RUNTIME";
 }
 
+export interface PricingOptions {
+  includeRounded?: boolean;
+  roundingMode?: "ceil";
+}
+
 export interface BreakdownRow {
   dimensionKey: string;
   qty: number;
@@ -45,7 +50,7 @@ export interface BreakdownRow {
 
 export interface PriceResult {
   totalCredits: number;
-  totalCreditsToDeduct: number;
+  totalCreditsToDeduct?: number;
   breakdown: BreakdownRow[];
   ruleIdsUsed: string[];
   rulesetHash: string;
@@ -60,7 +65,7 @@ export interface PricingEngine {
   profileVersion: ProfileVersion;
   rulesetHash: string;
   engineVersion: string;
-  price: (input: PricingInput) => PriceResult;
+  price: (input: PricingInput, options?: PricingOptions) => PriceResult;
   buildAuditPayload: (input: PricingInput, result: PriceResult) => Record<string, unknown>;
 }
 
@@ -245,7 +250,8 @@ export function loadProfileVersion(json: string | ProfileVersion): PricingEngine
     profileVersion,
     rulesetHash: activeRulesetHash,
     engineVersion: ENGINE_VERSION,
-    price: (input: PricingInput) => price(profileVersion, input, activeRulesetHash),
+    price: (input: PricingInput, options?: PricingOptions) =>
+      price(profileVersion, input, activeRulesetHash, options),
     buildAuditPayload: (input: PricingInput, result: PriceResult) =>
       buildAuditPayload(profileVersion, input, result, activeRulesetHash),
   };
@@ -254,7 +260,8 @@ export function loadProfileVersion(json: string | ProfileVersion): PricingEngine
 export function price(
   profileVersion: ProfileVersion,
   input: PricingInput,
-  precomputedRulesetHash?: string
+  precomputedRulesetHash?: string,
+  options?: PricingOptions
 ): PriceResult {
   const attributes = input.attributes;
   const mode = input.mode ?? "STRICT";
@@ -321,13 +328,20 @@ export function price(
     quarantineReason = quarantineReason ?? "UNMATCHED_DIMENSION";
   }
 
-  const totalCreditsToDeduct = totalCredits > 0 ? Math.ceil(totalCredits) : 0;
+  const includeRounded = options?.includeRounded ?? false;
+  const roundingMode = options?.roundingMode ?? "ceil";
+  const totalCreditsToDeduct =
+    includeRounded && totalCredits > 0
+      ? roundingMode === "ceil"
+        ? Math.ceil(totalCredits)
+        : Math.ceil(totalCredits)
+      : undefined;
   const profileEngineVersion = profileVersion.engineVersion ?? "unknown";
   const runtimeEngineVersion = ENGINE_VERSION;
 
   return {
     totalCredits,
-    totalCreditsToDeduct,
+    ...(totalCreditsToDeduct !== undefined ? { totalCreditsToDeduct } : {}),
     breakdown,
     ruleIdsUsed,
     rulesetHash: precomputedRulesetHash ?? profileVersion.rulesetHash ?? computedRulesetHash,
@@ -358,7 +372,9 @@ export function buildAuditPayload(
     attributes: input.attributes ?? {},
     eurPerCredit: profileVersion.eurPerCredit,
     totalCredits: result.totalCredits,
-    totalCreditsToDeduct: result.totalCreditsToDeduct,
+    ...(result.totalCreditsToDeduct !== undefined
+      ? { totalCreditsToDeduct: result.totalCreditsToDeduct }
+      : {}),
     costTotalEur,
     ...(result.unmatchedDimensions ? { unmatchedDimensions: result.unmatchedDimensions } : {}),
     ...(result.quarantineReason ? { quarantineReason: result.quarantineReason } : {}),
