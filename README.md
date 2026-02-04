@@ -4,8 +4,8 @@ This repo hosts the Countwerk SDK packages.
 
 ## Packages
 
-- `@sebastianmaierofficial/countwerk-client`: Ledger-only Countwerk client for consumer APIs.
-- `@sebastianmaierofficial/countwerk-pricing`: Runtime Contract v1 helper (Dimensions -> CU -> Credits).
+- `@sebastianmaierofficial/countwerk-client`: Ledger-only Countwerk client for consumer APIs. Docs: `packages/client/README.md`
+- `@sebastianmaierofficial/countwerk-pricing`: Runtime Contract v1 helper (Dimensions -> CU -> Credits). Docs: `packages/pricing/README.md`
 
 ## Install
 

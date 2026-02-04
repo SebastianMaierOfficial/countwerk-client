@@ -8,7 +8,7 @@ exports.loadProfileVersion = loadProfileVersion;
 exports.price = price;
 exports.buildAuditPayload = buildAuditPayload;
 const crypto_1 = __importDefault(require("crypto"));
-exports.ENGINE_VERSION = "runtime-v1";
+exports.ENGINE_VERSION = "runtime-v2";
 class PricingError extends Error {
     constructor(message, code, details) {
         super(message);
@@ -16,6 +16,8 @@ class PricingError extends Error {
         this.code = code;
         this.unmatchedDimensions = details?.unmatchedDimensions;
         this.attributes = details?.attributes;
+        this.rulesetHash = details?.rulesetHash;
+        this.computedRulesetHash = details?.computedRulesetHash;
     }
 }
 exports.PricingError = PricingError;
@@ -24,28 +26,24 @@ function parseProfileVersion(json) {
     if (!data || typeof data !== "object") {
         throw new Error("ProfileVersion must be an object.");
     }
-    if (!data.id) {
-        throw new Error("ProfileVersion.id is required.");
+    if (!data.profileVersionId) {
+        throw new Error("ProfileVersion.profileVersionId is required.");
     }
-    if (!data.ruleset || typeof data.ruleset !== "object") {
-        throw new Error("ProfileVersion.ruleset is required.");
+    if (!Number.isFinite(data.eurPerCredit) || (data.eurPerCredit ?? 0) <= 0) {
+        throw new Error("ProfileVersion.eurPerCredit must be a positive number.");
     }
-    const ruleset = data.ruleset;
-    if (!Number.isFinite(ruleset.cuPerCredit) || (ruleset.cuPerCredit ?? 0) <= 0) {
-        throw new Error("Ruleset.cuPerCredit must be a positive number.");
-    }
-    const rules = data.ruleset.rateRules;
+    const rules = data.rateRules;
     if (!Array.isArray(rules)) {
-        throw new Error("Ruleset.rateRules must be an array.");
+        throw new Error("ProfileVersion.rateRules must be an array.");
     }
-    data.ruleset.rateRules = data.ruleset.rateRules.map((rule) => {
+    data.rateRules = data.rateRules.map((rule) => {
         const normalized = {
             ...rule,
             dimensionKey: rule.dimensionKey,
-            rate: rule.rate,
+            creditsPerUnit: rule.creditsPerUnit,
+            costPerUnitEur: rule.costPerUnitEur,
             attributesMatch: rule.attributesMatch,
             status: rule.status ?? "active",
-            rateType: rule.rateType ?? "cu_per_unit",
         };
         if (!normalized.id) {
             throw new Error("Rule.id is required.");
@@ -53,14 +51,16 @@ function parseProfileVersion(json) {
         if (!normalized.dimensionKey) {
             throw new Error(`Rule.dimensionKey is required (rule ${normalized.id}).`);
         }
-        if (!Number.isFinite(normalized.rate)) {
-            throw new Error(`Rule.rate must be a number (rule ${normalized.id}).`);
+        if (!Number.isFinite(normalized.creditsPerUnit)) {
+            throw new Error(`Rule.creditsPerUnit must be a number (rule ${normalized.id}).`);
         }
-        if (normalized.rateType !== "cu_per_unit") {
-            throw new Error(`Rule.rateType must be 'cu_per_unit' (rule ${normalized.id}).`);
+        if (normalized.costPerUnitEur !== undefined && !Number.isFinite(normalized.costPerUnitEur)) {
+            throw new Error(`Rule.costPerUnitEur must be a number (rule ${normalized.id}).`);
         }
         return normalized;
     });
+    const computedRulesetHash = rulesetHash(data.rateRules);
+    data.rulesetHash = data.rulesetHash ?? computedRulesetHash;
     return data;
 }
 function normalizeAttributes(attributes) {
@@ -83,10 +83,10 @@ function normalizedRuleForHash(rule) {
     return {
         attributesMatch: normalizeAttributes(rule.attributesMatch) ?? {},
         dimensionKey: rule.dimensionKey,
+        creditsPerUnit: rule.creditsPerUnit,
+        costPerUnitEur: rule.costPerUnitEur ?? null,
         id: rule.id,
         priority: rule.priority ?? 0,
-        rate: rule.rate,
-        rateType: rule.rateType ?? "cu_per_unit",
         status: rule.status ?? "active",
     };
 }
@@ -116,6 +116,8 @@ function rulesetHash(rules) {
 }
 function attributesMatch(ruleAttributes, inputAttributes) {
     if (!ruleAttributes)
+        return true;
+    if (Object.keys(ruleAttributes).length === 0)
         return true;
     if (!inputAttributes)
         return false;
@@ -156,18 +158,9 @@ function pickMatchingRule(rules, dimension, attributes) {
         return a.id.localeCompare(b.id);
     })[0];
 }
-function calculateCredits(cuTotal, cuPerCredit, minChargeCredits) {
-    if (cuTotal <= 0)
-        return 0;
-    const credits = Math.ceil(cuTotal / cuPerCredit);
-    if (minChargeCredits !== undefined && credits < minChargeCredits) {
-        return minChargeCredits;
-    }
-    return credits;
-}
 function loadProfileVersion(json) {
     const profileVersion = parseProfileVersion(json);
-    const activeRulesetHash = rulesetHash(profileVersion.ruleset.rateRules);
+    const activeRulesetHash = profileVersion.rulesetHash ?? rulesetHash(profileVersion.rateRules);
     return {
         profileVersion,
         rulesetHash: activeRulesetHash,
@@ -177,64 +170,93 @@ function loadProfileVersion(json) {
     };
 }
 function price(profileVersion, input, precomputedRulesetHash) {
-    const { ruleset } = profileVersion;
     const attributes = input.attributes;
+    const mode = input.mode ?? "STRICT";
     const breakdown = [];
     const ruleIdsUsed = [];
     const unmatchedDimensions = [];
-    let cuTotal = 0;
+    const computedRulesetHash = rulesetHash(profileVersion.rateRules);
+    const rulesetHashProvided = profileVersion.rulesetHash !== undefined;
+    const rulesetHashMatches = !rulesetHashProvided || profileVersion.rulesetHash === computedRulesetHash;
+    let totalCredits = 0;
+    let quarantineReason;
+    if (!rulesetHashMatches) {
+        if (mode === "STRICT") {
+            throw new PricingError("Ruleset hash mismatch.", "RULESET_HASH_MISMATCH", {
+                rulesetHash: profileVersion.rulesetHash,
+                computedRulesetHash,
+            });
+        }
+        quarantineReason = "RULESET_HASH_MISMATCH";
+    }
     for (const [dimension, qtyRaw] of Object.entries(input.dimensions)) {
         const qty = Number(qtyRaw);
         if (!Number.isFinite(qty) || qty <= 0) {
             continue;
         }
-        const rule = pickMatchingRule(ruleset.rateRules, dimension, attributes);
+        const rule = pickMatchingRule(profileVersion.rateRules, dimension, attributes);
         if (!rule) {
             unmatchedDimensions.push(dimension);
             continue;
         }
-        const cuPerUnit = rule.rate;
-        const rowCuTotal = qty * cuPerUnit;
-        cuTotal += rowCuTotal;
+        const rowCredits = qty * rule.creditsPerUnit;
+        totalCredits += rowCredits;
+        const rowCostEur = rule.costPerUnitEur !== undefined ? qty * rule.costPerUnitEur : undefined;
         breakdown.push({
             dimensionKey: dimension,
             qty,
-            rate: cuPerUnit,
-            cuCost: rowCuTotal,
+            creditsPerUnit: rule.creditsPerUnit,
+            credits: rowCredits,
+            costPerUnitEur: rule.costPerUnitEur,
+            costEur: rowCostEur,
             ruleId: rule.id,
         });
         if (!ruleIdsUsed.includes(rule.id)) {
             ruleIdsUsed.push(rule.id);
         }
     }
-    if (unmatchedDimensions.length > 0) {
+    if (unmatchedDimensions.length > 0 && mode === "STRICT") {
         throw new PricingError("Unmatched dimension(s) in pricing input.", "UNMATCHED_DIMENSION", {
             unmatchedDimensions,
             attributes: attributes ?? {},
         });
     }
-    const credits = calculateCredits(cuTotal, ruleset.cuPerCredit, ruleset.minChargeCredits);
+    if (unmatchedDimensions.length > 0 && mode === "RUNTIME") {
+        quarantineReason = quarantineReason ?? "UNMATCHED_DIMENSION";
+    }
+    const totalCreditsToDeduct = totalCredits > 0 ? Math.ceil(totalCredits) : 0;
+    const profileEngineVersion = profileVersion.engineVersion ?? "unknown";
+    const runtimeEngineVersion = exports.ENGINE_VERSION;
     return {
-        cuTotal,
-        credits,
+        totalCredits,
+        totalCreditsToDeduct,
         breakdown,
         ruleIdsUsed,
-        rulesetHash: precomputedRulesetHash ?? rulesetHash(ruleset.rateRules),
-        profileVersionId: profileVersion.id,
-        engineVersion: exports.ENGINE_VERSION,
+        rulesetHash: precomputedRulesetHash ?? profileVersion.rulesetHash ?? computedRulesetHash,
+        profileVersionId: profileVersion.profileVersionId,
+        profileEngineVersion,
+        runtimeEngineVersion,
+        ...(unmatchedDimensions.length > 0 ? { unmatchedDimensions } : {}),
+        ...(quarantineReason ? { quarantineReason } : {}),
     };
 }
 function buildAuditPayload(profileVersion, input, result, precomputedRulesetHash) {
     const rulesetHashValue = precomputedRulesetHash ?? result.rulesetHash;
+    const costTotalEur = result.breakdown.reduce((sum, row) => sum + (row.costEur ?? 0), 0);
     return {
         timestamp: new Date().toISOString(),
-        engineVersion: exports.ENGINE_VERSION,
-        profileVersionId: profileVersion.id,
+        profileEngineVersion: result.profileEngineVersion,
+        runtimeEngineVersion: result.runtimeEngineVersion,
+        profileVersionId: profileVersion.profileVersionId,
         rulesetHash: rulesetHashValue,
         ruleIdsUsed: result.ruleIdsUsed,
         dimensions: input.dimensions,
         attributes: input.attributes ?? {},
-        cuTotal: result.cuTotal,
-        creditsDeducted: result.credits,
+        eurPerCredit: profileVersion.eurPerCredit,
+        totalCredits: result.totalCredits,
+        totalCreditsToDeduct: result.totalCreditsToDeduct,
+        costTotalEur,
+        ...(result.unmatchedDimensions ? { unmatchedDimensions: result.unmatchedDimensions } : {}),
+        ...(result.quarantineReason ? { quarantineReason: result.quarantineReason } : {}),
     };
 }

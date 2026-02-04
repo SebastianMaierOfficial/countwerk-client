@@ -1,48 +1,51 @@
-export declare const ENGINE_VERSION = "runtime-v1";
+export declare const ENGINE_VERSION = "runtime-v2";
 export type DimensionQuantities = Record<string, number>;
 export type Attributes = Record<string, string>;
 export type RuleAttributeMatch = Record<string, string | string[]>;
 export interface PricingRule {
     id: string;
     dimensionKey: string;
-    rate: number;
-    rateType: "cu_per_unit";
+    creditsPerUnit: number;
+    costPerUnitEur?: number;
     attributesMatch?: RuleAttributeMatch;
     priority?: number;
     status?: string;
     createdAt?: string;
 }
-export interface Ruleset {
-    id?: string;
-    cuPerCredit: number;
-    minChargeCredits?: number;
-    rateRules: PricingRule[];
-}
 export interface ProfileVersion {
-    id: string;
-    ruleset: Ruleset;
-    created_at?: string;
+    profileVersionId: string;
+    eurPerCredit: number;
+    rateRules: PricingRule[];
+    rulesetHash?: string;
+    engineVersion?: string;
+    createdAt?: string;
     metadata?: Record<string, unknown>;
 }
 export interface PricingInput {
     dimensions: DimensionQuantities;
     attributes?: Attributes;
+    mode?: "STRICT" | "RUNTIME";
 }
 export interface BreakdownRow {
     dimensionKey: string;
     qty: number;
-    rate: number;
-    cuCost: number;
+    creditsPerUnit: number;
+    credits: number;
+    costPerUnitEur?: number;
+    costEur?: number;
     ruleId: string;
 }
 export interface PriceResult {
-    cuTotal: number;
-    credits: number;
+    totalCredits: number;
+    totalCreditsToDeduct: number;
     breakdown: BreakdownRow[];
     ruleIdsUsed: string[];
     rulesetHash: string;
     profileVersionId: string;
-    engineVersion: string;
+    profileEngineVersion: string;
+    runtimeEngineVersion: string;
+    unmatchedDimensions?: string[];
+    quarantineReason?: string;
 }
 export interface PricingEngine {
     profileVersion: ProfileVersion;
@@ -55,9 +58,13 @@ export declare class PricingError extends Error {
     code: string;
     unmatchedDimensions?: string[];
     attributes?: Attributes;
+    rulesetHash?: string;
+    computedRulesetHash?: string;
     constructor(message: string, code: string, details?: {
         unmatchedDimensions?: string[];
         attributes?: Attributes;
+        rulesetHash?: string;
+        computedRulesetHash?: string;
     });
 }
 export declare function loadProfileVersion(json: string | ProfileVersion): PricingEngine;

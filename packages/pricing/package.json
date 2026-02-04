@@ -1,6 +1,6 @@
 {
   "name": "@sebastianmaierofficial/countwerk-pricing",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Countwerk Pricing Runtime Contract v1 helper",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
